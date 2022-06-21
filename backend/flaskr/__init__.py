@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import random
 
 from models import setup_db, Question, Category
@@ -16,31 +16,56 @@ def create_app(test_config=None):
     """
     @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
-
+    cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
     """
-
+  
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,true')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PATCH,POST,DELETE,OPTIONS')
+        return response
     """
     @TODO:
     Create an endpoint to handle GET requests
     for all available categories.
     """
+    @app.route('/categories')   
+    def get_categories():
+        categories= Category.query.all()
+        formatted_categories = [category.format() for category in categories]
 
+        return jsonify({
+            'success':True,
+            'categories': formatted_categories
+        })
 
     """
-    @TODO:
+    @TODO:   
     Create an endpoint to handle GET requests for questions,
     including pagination (every 10 questions).
     This endpoint should return a list of questions,
-    number of total questions, current category, categories.
+    number of total questions, current category, categories.    
 
     TEST: At this point, when you start the application
     you should see questions and categories generated,
     ten questions per page and pagination at the bottom of the screen for three pages.
     Clicking on the page numbers should update the questions.
     """
+    @app.route('/questions', methods=['GET'])
+    def get_questions():
+        page = request.args.get('page', 1, type=int)
+        start = (page-1) * 10
+        end = start + 10
+        questions= Question.query.all()
+        formatted_questions = [question.format() for question in questions]
 
+        return jsonify({
+            'success':True,
+            'questions': formatted_questions[start:end],
+            'total_questions': len(formatted_questions)
+        })
     """
     @TODO:
     Create an endpoint to DELETE question using a question ID.
@@ -48,7 +73,9 @@ def create_app(test_config=None):
     TEST: When you click the trash icon next to a question, the question will be removed.
     This removal will persist in the database and when you refresh the page.
     """
-
+    @app.route('/questions/<int:question_id>')
+    def delete_question(question_id):
+        return 'i am deleting a question with id'
     """
     @TODO:
     Create an endpoint to POST a new question,
@@ -59,7 +86,9 @@ def create_app(test_config=None):
     the form will clear and the question will appear at the end of the last page
     of the questions list in the "List" tab.
     """
-
+    @app.route('/questions', methods=['POST'])
+    def new_question():
+        return 'i just posted new question'
     """
     @TODO:
     Create a POST endpoint to get questions based on a search term.
@@ -70,7 +99,14 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
-
+    @app.route('question/search', methods=['POST'])
+    def search_question():
+        search_query = request.form.get('search_term', '').strip()        
+        questions = Question.query.filter(Question.question.ilike('%' + search_query + '%')).all()
+        return jsonify({
+            'success': True,
+            'searched_question': questions
+        })
     """
     @TODO:
     Create a GET endpoint to get questions based on category.
@@ -79,7 +115,17 @@ def create_app(test_config=None):
     categories in the left column will cause only questions of that
     category to be shown.
     """
+    @app.route('/questions/<string:category_id>/category', methods=['GET'])
+    def get_question_by_category(category_id):
+        question = Question.query.filter(Question.category == category_id).all()
 
+        if question is None:
+            abort(404)
+        else:
+            return jsonify({
+            'success':True,
+            'questions': question.format()
+            })
     """
     @TODO:
     Create a POST endpoint to get questions to play the quiz.
