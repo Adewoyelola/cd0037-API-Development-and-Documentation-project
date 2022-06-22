@@ -1,15 +1,34 @@
-# API Development and Documentation Final Project
+## API Reference
 
-## Trivia App
+### Trivia App
 
 ## Introduction
 
+Udacity is invested in creating bonding experiences for its employees and students. A bunch of team members got the idea to hold trivia on a regular basis and created a webpage to manage the trivia app and play the game, but their API experience is limited and still needs to be built out.
+That's where you come in! Help them finish the trivia app so they can start holding trivia and seeing who's the most knowledgeable of the bunch. The application must:
+
+1. Display questions - both all questions and by category. Questions should show the question, category and difficulty rating by default and can show/hide the answer.
+2. Delete questions.
+3. Add questions and require that they include question and answer text.
+4. Search for questions based on a text query string.
+5. Play the quiz game, randomizing either all questions or within a specific category.
+
+Completing this trivia app will give you the ability to structure plan, implement, and test an API - skills essential for enabling your future applications to communicate with others.
+
 ## Getting Started
-    Base URL
+   >> Base URL: At present this app can only be run locally and is not hosted as a base URL. The backend app is hosted at the default, `http://127.0.0.1:5000/`, which is set as a proxy in the frontend configuration. 
+   >> Authentication: This version of the application does not require authentication or API keys. 
 
 
 ## Error
-Response codes include 400, 422, 404 and 500
+Errors are returned as JSON objects in the following format:
+
+{
+    "success": False, 
+    "error": 400,
+    "message": "bad request"
+}
+Response codes returned by API when requests fail include 400, 422, 404 and 500
 # 404 : 
     Resource not found. 
     This occurs when the resource you are looking for does not exist.
