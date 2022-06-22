@@ -33,24 +33,6 @@ class TriviaTestCase(unittest.TestCase):
     TODO
     Write at least one test for each test for successful operation and for expected errors.
     """
-    def test_get_paginated_questions(self):
-        res = self.client().get('/questions')
-        data = json.loads(res.data)
-
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(data['success'], True)
-        self.assertTrue(data['total_questions'])
-        self.assertTrue(len(data['questions']))
-        self.assertTrue(len(data['categories']))
-
-    def test_404_sent_requesting_questions_beyond_valid_page(self):
-        res = self.client().get('/questions?page=100000')
-        data = json.loads(res.data)
-
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], 'resource not found')
-
     def test_get_categories(self):
         res = self.client().get('/categories')
         data = json.loads(res.data)
@@ -59,7 +41,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertTrue(len(data['categories']))
 
-    def test_404_sent_requesting_non_existing_category(self):
+    def test_get_categories_non_existing(self):
         res = self.client().get('/categories/100000')
         data = json.loads(res.data)
 
@@ -67,8 +49,27 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'resource not found')
 
+    def test_get_paginated_questions(self):
+        res = self.client().get('/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['totalQuestions'])
+        self.assertTrue(len(data['questions']))
+        self.assertTrue(len(data['categories']))
+
+    def test_404_sent_requesting_beyond_valid_page(self):
+        res = self.client().get('/questions?page=100000')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
+
+    
     def test_delete_question(self):
-        question = Question(question='new question', answer='new answer',
+        question = Question(question='a new question', answer='a new answer',
                             difficulty=1, category="1")
         question.insert()
         deleted_question_id = question.id
@@ -82,7 +83,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['deleted'], str(deleted_question_id))
         self.assertEqual(question, None)
 
-    def test_422_sent_deleting_non_existing_question(self):
+    def test_422_delete_non_existing_question(self):
         res = self.client().delete('/questions/100000')
         data = json.loads(res.data)
 
@@ -119,14 +120,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "unprocessable")
 
     def test_search_questions(self):
-        new_search_term = {'searchTerm': 'friends'}
+        new_search_term = {'searchTerm': 'portfolio'}
         res = self.client().post('/questions/search', json=new_search_term)
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
         self.assertIsNotNone(data['questions'])
-        self.assertIsNotNone(data['total_questions'])
+        self.assertIsNotNone(data['totalQuestions'])
 
     def test_404_search_question(self):
         new_search_term = {
@@ -146,8 +147,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
         self.assertTrue(len(data['questions']))
-        self.assertTrue(data['total_questions'])
-        self.assertTrue(data['current_category'])
+        self.assertTrue(data['totalQuestions'])
+        self.assertTrue(data['currentCategory'])
 
     def test_404_get_questions_per_category(self):
         res = self.client().get('/categories/non_existence_category/questions')

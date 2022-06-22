@@ -168,7 +168,7 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
-    @app.route('question/search', methods=['POST'])
+    @app.route('/question/search', methods=['POST'])
     def search_question():
         try:
             body = request.get_json()
@@ -281,11 +281,11 @@ def create_app(test_config=None):
             "error": 400, 
             "message": "bad request"}), 400
 
-    @app.errorhandler(405)
-    def method_not_allowed(error):
+    @app.errorhandler(500)
+    def internal_server_error(error):
         return jsonify({
           "success": False, 
-            "error": 405, 
-            "message": "method not allowed"}), 405
+            "error": 500, 
+            "message": "Internal Server Error"}), 500
     return app
 
