@@ -75,29 +75,27 @@ def create_app(test_config=None):
     ten questions per page and pagination at the bottom of the screen for three pages.
     Clicking on the page numbers should update the questions.
     """
-    @app.route('/questions', methods=['GET'])
+    @app.route('/questions')
     def get_questions():
-        try:
-            selection = Question.query.order_by(Question.id).all()
-            current_questions = paginate_questions(request, selection)
 
-            categories = Category.query.order_by(Category.type).all()
-            formatted_categories = {
-                category.id: category.type for category in categories}
+        selection = Question.query.order_by(Question.id).all()
+        current_questions = paginate_questions(request, selection)
 
-            if len(current_questions) == 0:
-                abort(404)
+        categories = Category.query.all()
+        formatted_categories = {
+            category.id: category.type for category in categories}
 
-            return jsonify({
-                'success': True,
-                'questions': current_questions,
-                'totalQuestions': len(Question.query.all()),
-                'categories': formatted_categories,
-                'currentCategory': len(Question.query.order_by(Question.category).all())
-            })
+        if len(current_questions) == 0:
+            abort(404)
 
-        except:
-            abort(422)
+        return jsonify({
+            'success': True,
+            'questions': current_questions,
+            'totalQuestions': len(Question.query.all()),
+            'categories': formatted_categories,
+            'currentCategory': None
+        })
+
     """
     @TODO:
     Create an endpoint to DELETE question using a question ID.
@@ -123,7 +121,7 @@ def create_app(test_config=None):
                     "success": True,
                     "deleted": question_id,
                     "questions": current_questions,
-                    "total_questions": len(Question.query.all()),
+                    "totalQuestions": len(Question.query.all()),
                 }
             )
 
@@ -176,20 +174,17 @@ def create_app(test_config=None):
     """
     @app.route('/questions/search', methods=['POST'])
     def search_question():
+
+        body = request.get_data()
+        body = json.loads(body)
+        search_query = body.get('searchTerm', None)
+
+        if not search_query:
+            abort(404)
         try:
-            body = request.get_data()
-            body = json.loads(body)
-            search_query = body.get('searchTerm', None)
-
-            if not search_query:
-                abort(404)
-
             questions = Question.query.order_by(Question.id).filter(
                 Question.question.ilike(f'%{search_query}%'))
             current_question = paginate_questions(request, questions)
-
-            if questions is None:
-                abort(404)
 
             return jsonify({
                 'success': True,
@@ -198,6 +193,7 @@ def create_app(test_config=None):
                 'currentCategory': None
             })
         except:
+            print(sys.exc_info())
             abort(422)
 
     """
@@ -211,8 +207,8 @@ def create_app(test_config=None):
     @app.route('/categories/<int:category_id>/questions', methods=['GET'])
     def get_question_by_category(category_id):
         try:
-            question = Question.query.filter(
-                Question.category == str(category_id)).all()
+            question = Question.query.filter_by(
+                category=str(category_id)).all()
             current_questions = paginate_questions(request, question)
 
             if len(question) == 0:
@@ -224,6 +220,7 @@ def create_app(test_config=None):
                 'totalQuestions': len(Question.query.all())
             })
         except:
+            print(sys.exc_info())
             abort(422)
     """
     @TODO:
@@ -239,10 +236,8 @@ def create_app(test_config=None):
     @app.route('/quizzes', methods=['POST'])
     def play_quiz():
 
-        body = request.get_json()
-
-        if not ('quiz_category' in body and 'previous_questions' in body):
-            abort(422)
+        body = request.get_data()
+        body = json.loads(body)
 
         category = body.get('quiz_category')
         previous_questions = body.get('previous_questions')
