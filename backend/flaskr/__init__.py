@@ -4,6 +4,8 @@ from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
 import random
+import sys
+import json
 
 from models import setup_db, Question, Category
 
@@ -138,7 +140,8 @@ def create_app(test_config=None):
     """
     @app.route('/questions', methods=['POST'])
     def new_question():
-        body = request.get_json()
+        body = request.get_data()
+        body = json.loads(body)
 
         new_question = body.get("question", None)
         new_answer = body.get("answer", None)
@@ -151,15 +154,10 @@ def create_app(test_config=None):
 
             question.insert()
 
-            selection = Question.query.order_by(Question.id).all()
-            current_questions = paginate_questions(request, selection)
-
             return jsonify(
                 {
                     "success": True,
-                    "created": question.id,
-                    "questions": current_questions,
-                    "total_questions": len(Question.query.all()),
+                    "created": question.id
                 }
             )
 
@@ -175,24 +173,26 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
-    @app.route('/question/search', methods=['POST'])
+    @app.route('/questions/search', methods=['POST'])
     def search_question():
         try:
-            body = request.get_json()
+            body = request.get_data()
+            body = json.loads(body)
             search_query = body.get('searchTerm', None)
 
             if not search_query:
                 abort(404)
 
-            questions = Question.query.filter(
-                Question.question.ilike(f'%{search_query}%')).all()
+            questions = Question.query.order_by(Question.id).filter(
+                Question.question.ilike(f'%{search_query}%'))
+            current_question = paginate_questions(request, questions)
 
             if questions is None:
                 abort(404)
 
             return jsonify({
                 'success': True,
-                'questions': questions,
+                'questions': current_question,
                 'totalQuestions': len(Question.query.all()),
                 'currentCategory': None
             })
@@ -207,20 +207,20 @@ def create_app(test_config=None):
     categories in the left column will cause only questions of that
     category to be shown.
     """
-    @app.route('/questions/<int:category_id>/category', methods=['GET'])
+    @app.route('/categories/<int:category_id>/questions', methods=['GET'])
     def get_question_by_category(category_id):
         try:
             question = Question.query.filter(
                 Question.category == str(category_id)).all()
+            current_questions = paginate_questions(request, question)
 
             if len(question) == 0:
                 abort(404)
 
             return jsonify({
                 'success': True,
-                'questions': question.format(),
-                'totalQuestions': len(Question.query.all()),
-                'currentCategory': category_id
+                'questions': current_questions,
+                'totalQuestions': len(Question.query.all())
             })
         except:
             abort(422)
