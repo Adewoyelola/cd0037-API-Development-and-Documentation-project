@@ -52,7 +52,8 @@ def create_app(test_config=None):
     def get_categories():
         categories = Category.query.order_by(Category.type).all()
 
-        formatted_categories = [category.format() for category in categories]
+        formatted_categories = {
+            category.id: category.type for category in categories}
 
         if len(categories) == 0:
             abort(404)
@@ -81,8 +82,8 @@ def create_app(test_config=None):
             current_questions = paginate_questions(request, selection)
 
             categories = Category.query.order_by(Category.type).all()
-            formatted_categories = [category.format()
-                                    for category in categories]
+            formatted_categories = {
+                category.id: category.type for category in categories}
 
             if len(current_questions) == 0:
                 abort(404)
@@ -246,12 +247,14 @@ def create_app(test_config=None):
         category = body.get('quiz_category')
         previous_questions = body.get('previous_questions')
 
-        new_question = Question.query.filter_by(
-            category=category['id']
-        ).filter(
-            Question.id.notin_(previous_questions)
-        ).all()
-        question_length = len(new_question)
+        if category['id'] == 0:
+            new_question = Question.query.all()
+            new_question = [question.format() for question in new_question]
+        else:
+            new_question = Question.query.filter(
+                Question.category == category['id']).all()
+            new_question = [question.format() for question in new_question]
+
         if len(new_question) > 0:
             return jsonify({
                 "success": True,
